@@ -3,7 +3,7 @@ title: SpringBoot
 published: 2025-01-25
 description: ''
 image: ./cover.png
-tags: ["SpringBoot"]
+tags: [SpringBoot]
 category: Spring
 draft: false
 ---
@@ -355,8 +355,7 @@ public class Order {
   **嵌套查询**和**嵌套结果映射**是Collection映射的两种方式，下面通过一个案例进行介绍
 
   例如有`room_info`和`graph_info`两张表，其关系为一对多，如下
-
-  <img src="./insert/mybatis-一对多.drawio.svg" style="zoom:50%;" />
+  ![这是图片](../../../assets/images/mybatis-一对多.jpg "一对多")
 
   现需要查询房间列表及其图片信息，期望返回的结果如下
 
@@ -423,9 +422,9 @@ public class Order {
     </resultMap>
     ```
 
-    这种方式的执行原理如下图所示
+    这种方式的执行原理如下图所示:
 
-    <img src="./insert/mybatis-嵌套结果映射.drawio.svg" style="zoom:50%;" />
+    ![这是图片](../../../assets/images/mybatis-嵌套结果映射.jpg "嵌套结果映射")
 
   - **嵌套查询**
 
@@ -453,17 +452,17 @@ public class Order {
 
     这种方法使用两个独立的查询语句来获取一对多关系的数据。首先，Mybatis会执行主查询来获取`room_info`列表，然后对于每个`room_info`，Mybatis都会执行一次子查询来获取其对应的`graph_info`。
 
-    <img src="./insert/mybatis-嵌套查询.drawio.svg" style="zoom:50%;" />
+    ![这是图片](../../../assets/images/mybatis-嵌套查询.jpg "嵌套查询")
 
   若现在使用MybatisPlus的分页插件进行分页查询，假如查询的内容是第**1**页，每页**2**条记录，则上述两种方式的查询结果分别是
 
   - **嵌套结果映射**
 
-    <img src="./insert/mybatis-分页查询-嵌套结果映射.drawio.svg" style="zoom:50%;" />
+    ![这是图片](../../../assets/images/mybatis-分页查询-嵌套结果映射.jpg "分页查询-嵌套结果映射")
 
   - **嵌套查询**
 
-    <img src="./insert/mybatis-分页查询-嵌套查询.drawio.svg" style="zoom:50%;" />
+    ![这是图片](../../../assets/images/mybatis-分页查询-嵌套查询.jpg "分页查询-嵌套查询")
 
   显然**嵌套结果映射**的分页逻辑是存在问题的。
   
@@ -473,7 +472,7 @@ public class Order {
 
 缓存优化是一个性价比很高的优化手段，多数情况下，缓存优化可以通过一些简单的操作，换来性能的大幅提升。缓存优化的核心思想就是将一些原本保存在磁盘（例如MySQL）中的、经常访问并且查询开销比较大的数据，临时保存到内存（例如Redis）中。后序再访问相同数据时，就可直接从内存中获取结果，而无需再访问磁盘，由于内存的读写速度远高于磁盘，因此就能极大的提高程序的性能。
 
-<img src="./insert/缓存概述.drawio.svg" style="zoom:50%;" />
+![这是图片](../../../assets/images/缓存概述.jpg "缓存概述")
 
 在使用缓存优化时，有一个问题不得不提，那就是**数据库和缓存数据的一致性**，当数据库中的数据发生变化时，缓存中的数据也要同步更新，否则就会出现数据不一致的问题，解决该问题的方案有如下几个
 

@@ -1,9 +1,9 @@
 ---
 title: 微服务
 published: 2025-01-07
-description: '微服务学习笔记'
+description: 微服务学习笔记
 image: ./cover.png
-tags: ["SpringBoot", "SpringCloud"]
+tags: [SpringBoot, SpringCloud]
 category: Spring
 draft: false
 ---

@@ -1,19 +1,19 @@
 ---
 title: MySQL
 published: 2025-01-24
-description: 'MySQL学习笔记'
+description: MySQL学习笔记
 category: SQL
-tags: ["MySQL"]
+tags: [MySQL]
 draft: false
 ---
 
-### `MySQL`的执行顺序
+### MySQL的执行顺序
 
 `from` > `join` > `where` > `group by` > 聚合函数 > `having` > `select` > `order by` > `limit`
 
 > 格式化函数(格式化数字：FROMAT(),格式化日期：DATE_FORMAT())会在`group by`之前执行
 
-### `count`的条件用法
+### count的条件用法
 
 `count` 函数用于计算非 `null` 值的数量。
 
