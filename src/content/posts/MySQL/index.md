@@ -2,6 +2,7 @@
 title: MySQL
 published: 2024-01-24
 description: MySQL学习笔记
+image: ./cover.jpg
 category: SQL
 tags: [MySQL]
 draft: false
