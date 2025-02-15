@@ -1,6 +1,6 @@
 ---
 title: SpringBoot
-published: 2025-01-25
+published: 2024-01-25
 description: ''
 image: ./cover.png
 tags: [SpringBoot]

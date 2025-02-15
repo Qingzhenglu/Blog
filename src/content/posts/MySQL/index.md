@@ -1,6 +1,6 @@
 ---
 title: MySQL
-published: 2025-01-24
+published: 2024-01-24
 description: MySQL学习笔记
 category: SQL
 tags: [MySQL]
