@@ -1,8 +1,8 @@
 ---
-title: spring
+title: Spring
 published: 2025-02-15
 description: ''
-image: ./cover2.jpg
+image: ./cover.jpg
 tags: ["Spring"]
 category: Spring
 draft: false
