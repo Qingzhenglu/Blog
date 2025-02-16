@@ -1,7 +1,7 @@
 ---
 title: SpringBoot
 published: 2024-01-25
-description: ''
+description: SpringBoot开发笔记
 image: ./cover.png
 tags: [SpringBoot]
 category: Spring

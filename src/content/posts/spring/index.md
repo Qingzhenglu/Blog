@@ -1,7 +1,7 @@
 ---
 title: Spring
 published: 2024-02-15
-description: ''
+description: Spring学习笔记
 image: ./cover.jpg
 tags: [Spring]
 category: Spring

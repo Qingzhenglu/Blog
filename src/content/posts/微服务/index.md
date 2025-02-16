@@ -7,10 +7,7 @@ tags: [SpringBoot, SpringCloud]
 category: Spring
 draft: false
 ---
-微服务学习笔记
-<!-- more -->
-
-## Nacos-注册/配置中心
+## Nacos - 注册/配置中心
 
 1. ### 简介
 
@@ -42,7 +39,7 @@ draft: false
      
      ```
 
-   - 在`application.yml`或`application.properties`中进行配置
+   - 在`application.yml`（推荐yml，配置多时比较整洁）或`application.properties`中进行配置
 
      ```properties
      spring.cloud.nacos.discovery.server-addr=127.0.0.1:8848
@@ -120,7 +117,6 @@ draft: false
         @Configuration
         public class Configuration {
         
-           
             @Bean
             RestTemplate restTemplate() {
                 return new RestTemplate();
@@ -128,10 +124,10 @@ draft: false
         }
         
         ```
-
-     2. 调用
-
-        ```java
+        
+   2. 调用
+     
+      ```java
             @Autowired
             RestTemplate restTemplate;
         
@@ -145,9 +141,9 @@ draft: false
          }
         
         ```
-
-     > 使用RestTemplate，必须精确指定地址和端口
-
+     
+   > 使用RestTemplate，必须精确指定地址和端口
+   
 6. ### 负载均衡
 
    1. 依赖导入
@@ -204,7 +200,7 @@ draft: false
 
      ```java
      @Component
-     @ConfigurationProperties(prefix = "order") //配置批量绑定在nacos下，可以无需@RefreshScope就能实现自动刷新
+     @ConfigurationProperties(prefix = "order")
      @Data
      public class OrderProperties {
      
@@ -221,13 +217,57 @@ draft: false
      order.auto-confirm=7d
      ```
 
-## OpenFeign-远程调用
+## OpenFeign - 远程调用
 
-```
-@EnableFeignClients
-```
+1. ### 引入依赖，开启功能
 
-## Zuul网关
+   ```java
+   @SpringBootApplication
+   @EnableFeignClients
+   public class Application {
+   
+       public static void main(String[] args) {
+           SpringApplication.run(Application.class, args);
+       }
+   
+   }
+   ```
 
-1. swagger 依赖写在接口pom.xml,注解统一写在接口处
-2. swagger一般只在测试环境搭建,可以在描述中协商不同环境的接口地址
+   > ```
+   > @EnableFeignClients
+   > @EnableFeignClients(basePackages = "com.example.clients")
+   > ```
+
+2. ### 使用
+
+   ```java
+   @FeignClient("stores")
+   public interface StoreClient {
+   	@RequestMapping(method = RequestMethod.GET, value = "/stores")
+   	List<Store> getStores();
+   
+   	@GetMapping("/stores")
+   	Page<Store> getStores(Pageable pageable);
+   
+   	@PostMapping(value = "/stores/{storeId}", consumes = "application/json",
+   				params = "mode=upsert")
+   	Store update(@PathVariable("storeId") Long storeId, Store store);
+   
+   	@DeleteMapping("/stores/{storeId}")
+   	void delete(@PathVariable Long storeId);
+   }
+   ```
+
+   
+
+## Sentinel - 流量保护
+
+TODO
+
+## Gateway - 网关
+
+TODO
+
+## Seata - 分布式事务
+
+TODO
