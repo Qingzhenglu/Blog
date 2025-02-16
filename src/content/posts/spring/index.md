@@ -2,7 +2,7 @@
 title: Spring
 published: 2024-02-15
 description: ''
-image: ./cover.jpg
+image: ./cover.png
 tags: [Spring]
 category: Spring
 draft: false
