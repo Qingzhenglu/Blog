@@ -8,6 +8,6 @@
 
 ![图片](../posts/spring/cover.jpg )
 
-![图片](../posts/spring/cover.jpg )
+<!-- ![图片](../posts/spring/cover.jpg ) -->
 
 ![图片](../posts/MySQL/cover.jpg )
