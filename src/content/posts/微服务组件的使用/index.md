@@ -7,7 +7,14 @@ tags: [SpringBoot, SpringCloud]
 category: Spring
 draft: false
 ---
-## Nacos - 注册/配置中心
+### 微服务拆分原则
+
+- 不同的微服务，不要重复开发相同的业务
+
+- 数据独立，不要访问其他微服务的数据库
+- 将自己的业务暴露，以供其他微服务调用
+
+## Nacos - 注册/发现服务 + 配置中心
 
 1. ### 简介
 
@@ -128,9 +135,8 @@ draft: false
    2. 调用
 
       ```java
-            @Autowired
-            RestTemplate restTemplate;
-        
+        @Autowired
+        RestTemplate restTemplate;
         
          @Test
          void testRestTemplate() {
@@ -143,6 +149,8 @@ draft: false
       ```
 
    > 使用RestTemplate，必须精确指定地址和端口
+   >
+   > 存在的问题：可读性差，参数url难维护
 
 6. ### 负载均衡
 
@@ -196,11 +204,18 @@ draft: false
 
 7. ### 配置中心
 
-   - `ConfigurationProperties`，自动绑定配置，动态更新
+   #### 配置获取步骤 ：
+
+   - 优先读取`bootstrap.yml`中的配置文件获取nacos地址
+   - 读取nacos中的配置文件
+   - 读取本地`application.yml`
+   - 两者合并
+   - 创建spring容器
+   - 加载bean
 
      ```java
      @Component
-     @ConfigurationProperties(prefix = "order")
+     @ConfigurationProperties(prefix = "order") // 自动绑定配置，动态更新
      @Data
      public class OrderProperties {
      
@@ -216,6 +231,18 @@ draft: false
      order.timeout=10min
      order.auto-confirm=7d
      ```
+
+#### 微服务启动时会从nacos读取多个配置文件：
+
+- `[spring.application.name]-[spring.profiles.active].yaml`,例如:`userservice-dev.yaml`
+- `[spring.application.name].yaml`,例如:`userservice.yaml`
+  无论profile如何变化，`[spring.application.name].yaml`这个文件一定会加载，因此多环境共享配置可以写入这个文件
+
+#### 配置优先原则：
+
+- 服务名-环境名.yaml > 服务名.yaml > 本地配置
+
+
 
 ## OpenFeign - 远程调用
 
@@ -256,15 +283,139 @@ draft: false
     @DeleteMapping("/stores/{storeId}")
     void delete(@PathVariable Long storeId);
    }
+   
    ```
+   
+   主要是基于SpringMVC的注解来声明远程调用的信息，比如：
+   
+   - 服务名称：userservice
+   - 请求方式：GET
+   - 请求路径：/user/{id}
+   - 请求参数：Longid
+   - 返回值类型：User
+
+3. ### 自定义Feign的配置
+
+   | 类型                  | 作用             | 说明                                                   |
+   | --------------------- | ---------------- | ------------------------------------------------------ |
+   | `feign.Logger.Level`  | 修改日志级别     | 包含四种不同的级别：NONE、BASIC、HEADERS、FULL         |
+   | `feign.codec.Decoder` | 响应结果的解析器 | http远程调用的结果做解析，例如解析json字符串为java对象 |
+   | `feign.codec.Encoder` | 请求参数编码     | 将请求参数编码，便于通过http请求发送                   |
+   | `feign.Contract`      | 支持的注解格式   | 默认是SpringMVC的注解                                  |
+   | `feign.Retryer`       | 失败重试机制     | 请求失败的重试机制，默认是没有，不过会使用Ribbon的重试 |
+
+   一般配置日志级别即可。
+
+4. ### 性能优化
+
+   - 连接池配置：
+
+     引入`HttpClient`依赖:
+
+     ```xml
+     <!--httpCLient的依赖-->
+     <dependency>
+         <groupId>io.github.openfeign</groupId>
+         <artifactId>feign-httpclient</artifactId>
+     </dependency>
+     ```
+
+     配置feign:
+
+     ```yml
+     feign:
+       httpclient:
+         enabled: true # 支持HttpClient的开关
+         max-connections: 200 # 最大连接数
+         max-connections-per-route: 50 # 单个路径的最大连接数
+     ```
 
 ## Sentinel - 流量保护
 
-TODO
+微服务中，服务间调用关系错综复杂，一个微服务往往依赖于多个其它微服务，因此会产生雪崩问题。
+
+什么是雪崩问题？
+
+- 微服务之间相互调用，因为调用链中的一个服务故障，引起整个链路都无法访问的情况。
+
+**限流**是对服务的保护，避免因瞬间高并发流量而导致服务故障，进而避免雪崩。是一种**预防**措施。
+
+**超时处理、线程隔离、降级熔断**是在部分服务故障时，将故障控制在一定范围，避免雪崩。是一种**补救**措施。
+
+### 流控
+
+需求：有查询订单和创建订单业务，两者都需要查询商品。针对从查询订单进入到查询商品的请求统计，并设置限流。
+
+使用链路模式，是对不同来源的两个链路做监控。但是sentinel默认会给进入SpringMVC的所有请求设置同一个root资源，会导致链路模式失效。
+
+我们需要关闭这种对SpringMVC的资源聚合，修改order-service服务的application.yml文件：
+
+```yml
+spring:
+  cloud:
+    sentinel:
+      web-context-unify: false # 关闭context整合
+```
+
+流控模式有哪些？
+
+- 直接：对当前资源限流
+
+- 关联：高优先级资源触发阈值，对低优先级资源限流。
+
+- 链路：阈值统计时，只统计从指定资源进入当前资源的请求，是对请求来源的限流
+
+### 热点参数限流
+
+部分商品是热点商品，例如秒杀商品，我们希望这部分商品的QPS限制与其它商品不一样，高一些。
+
+流控效果有哪些？
+
+- 快速失败：QPS超过阈值时，拒绝新的请求
+- warm up： QPS超过阈值时，拒绝新的请求；QPS阈值是逐渐提升的，可以避免冷启动时高并发导致服务宕机。
+- 排队等待：请求会进入队列，按照阈值允许的时间间隔依次执行请求；如果请求预期等待时长大于超时时间，直接拒绝
+
+**线程隔离**之前讲到过：调用者在调用服务提供者时，给每个调用的请求分配独立线程池，出现故障时，最多消耗这个线程池内资源，避免把调用者的所有资源耗尽。
+
+**熔断降级**：是在调用方这边加入断路器，统计对服务提供者的调用，如果调用的失败比例过高，则熔断该业务，不允许访问该服务的提供者了。
+
+不管是线程隔离还是熔断降级，都是对**客户端**（调用方）的保护。需要在**调用方** 发起远程调用时做线程隔离、或者服务熔断。
+
+而我们的微服务远程调用都是基于Feign来完成的，因此我们需要将Feign与Sentinel整合，在Feign里面实现线程隔离和服务熔断。
+
+## FeignClient整合Sentinel
+
+SpringCloud中，微服务调用都是通过Feign来实现的，因此做客户端保护必须整合Feign和Sentinel。
+
+1. ### 修改配置，开启sentinel功能
+
+   修改OrderService的application.yml文件，开启Feign的Sentinel功能：
+
+   ```yaml
+   feign:
+     sentinel:
+       enabled: true # 开启feign对sentinel的支持
+   ```
+
+   
+
+2. ### 编写失败降级逻辑
+
+   业务失败后，不能直接报错，而应该返回用户一个友好提示或者默认结果，这个就是失败降级逻辑。
+
+   给FeignClient编写失败后的降级逻辑
+
+   ①方式一：FallbackClass，无法对远程调用的异常做处理
+
+   ②方式二：FallbackFactory，可以对远程调用的异常做处理，我们选择这种
 
 ## Gateway - 网关
 
-TODO
+### 路由
+
+### 断言
+
+### 过滤器
 
 ## Seata - 分布式事务
 

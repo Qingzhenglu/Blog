@@ -8,9 +8,80 @@ category: Spring
 draft: false
 ---
 
-## 1. 创建订单时重复调用，导致结果不一样
+## 创建订单时重复调用，导致结果不一样
 
 解决方案：实现接口的幂等性（接口可重复调用，在调用多次的情况下，接口得到的结果是一致的）
+
+1. **幂等性设计具体实现**
+
+   1.1 **幂等键的生成和校验**
+
+   - **客户端**：在请求创建订单时，生成唯一幂等键（如 UUID），并在 HTTP 请求头中传递：
+
+     ```http
+     POST /api/order
+     Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
+     ```
+
+   - **服务端**：在业务逻辑层拦截幂等键，优先检查是否已存在：
+
+     ```java
+     @Aspect
+     @Component
+     public class IdempotentAspect {
+         @Autowired
+         private RedisTemplate<String, String> redisTemplate;
+     
+         @Around("@annotation(com.example.anno.Idempotent)")
+         public Object checkIdempotent(ProceedingJoinPoint joinPoint) throws Throwable {
+             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+             String idempotencyKey = request.getHeader("Idempotency-Key");
+             
+             // 检查 Redis 中是否存在该键
+             String key = "idempotent:" + idempotencyKey;
+             Boolean isAbsent = redisTemplate.opsForValue().setIfAbsent(key, "1", 1, TimeUnit.HOURS);
+             if (Boolean.FALSE.equals(isAbsent)) {
+                 throw new BusinessException("重复请求");
+             }
+             
+             try {
+                 return joinPoint.proceed();
+             } catch (Exception e) {
+                 // 如果事务回滚，删除幂等键
+                 redisTemplate.delete(key);
+                 throw e;
+             }
+         }
+     }
+     ```
+
+   1.2 **数据库唯一约束**
+
+   在订单表中添加唯一索引：
+
+   ```sql
+   ALTER TABLE `order` ADD UNIQUE INDEX `uk_idempotent_key` (`idempotency_key`);
+   ```
+
+   插入订单时捕获唯一键冲突：
+
+   ```java
+   @Transactional
+   public void createOrder(Order order) {
+       try {
+           orderMapper.insert(order);
+       } catch (DuplicateKeyException e) {
+           // 捕获唯一键冲突，直接返回幂等结果
+           log.warn("重复订单请求: {}", order.getIdempotencyKey());
+           return;
+       }
+       // 其他业务逻辑...
+   }
+   ```
+
+   
+
+2. 
 
 - 分布式锁
 
@@ -97,3 +168,6 @@ draft: false
   ```
 
   > 对于更新订单服务，可以通过一个版本号机制，每次更新数据前校验版本号，更新数据同时自增版本号，这样的方式（乐观锁），来确保更新订单服务的幂等性。
+
+## RabbitMQ
+
